@@ -10,3 +10,6 @@ QuickCode.Demo.Web/obj
 QuickCode.Demo.DataLayer/bin
 QuickCode.Demo.DataLayer/obj
 .DS_Store
+/src/Services/QuickCode.Demo.EventListenerService/QuickCode.Demo.EventListenerService.csproj.user
+/.gitignore
+/.gitignore
