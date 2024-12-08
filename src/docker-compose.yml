@@ -1,0 +1,106 @@
+services:
+  demo-pg-data:
+    container_name: "demo-pg-data"
+    image: postgres
+
+  demo-sql-data:
+    container_name: "demo-sql-data"
+    image: mcr.microsoft.com/mssql/server:2022-latest
+    
+  demo-mysql-data:
+    container_name: "demo-mysql-data"
+    image: mysql:8.3
+
+  demo-elasticsearch:
+    container_name: demo-elasticsearch
+    image: docker.elastic.co/elasticsearch/elasticsearch:8.11.0
+
+  demo-kibana:
+    container_name: demo-kibana
+    image: docker.elastic.co/kibana/kibana:8.11.0
+
+  quickcode-demo-gateway-api:
+    container_name: "quickcode-demo-gateway-api"
+    image: ${DOCKER_REGISTRY-}quickcode-demo-gateway-api
+    build:
+      context: .
+      dockerfile: Presentation/QuickCode.Demo.Gateway/Dockerfile
+
+  quickcode-demo-user-manager-module-api:
+    container_name: "quickcode-demo-user-manager-module-api"
+    image: ${DOCKER_REGISTRY-}quickcode-demo-user-manager-module-api
+    build:
+      context: . 
+      dockerfile: Modules/UserManagerModule/Presentation/QuickCode.Demo.UserManagerModule.Api/Dockerfile
+    depends_on:
+      - demo-sql-data
+      - demo-pg-data
+      
+
+  quickcode-demo-email-manager-module-api:
+    container_name: "quickcode-demo-email-manager-module-api"
+    image: ${DOCKER_REGISTRY-}quickcode-demo-email-manager-module-api
+    build:
+      context: . 
+      dockerfile: Modules/EmailManagerModule/Presentation/QuickCode.Demo.EmailManagerModule.Api/Dockerfile
+    depends_on:
+      - demo-sql-data
+      - demo-pg-data
+      
+
+  quickcode-demo-sms-manager-module-api:
+    container_name: "quickcode-demo-sms-manager-module-api"
+    image: ${DOCKER_REGISTRY-}quickcode-demo-sms-manager-module-api
+    build:
+      context: . 
+      dockerfile: Modules/SmsManagerModule/Presentation/QuickCode.Demo.SmsManagerModule.Api/Dockerfile
+    depends_on:
+      - demo-sql-data
+      - demo-pg-data
+      
+
+#[-WEB-]
+  
+  demo-zookeeper:
+    image: confluentinc/cp-zookeeper:latest
+    container_name: demo-zookeeper
+    environment:
+      ZOOKEEPER_CLIENT_PORT: 2181
+      ZOOKEEPER_TICK_TIME: 2000
+
+  demo-kafka:
+    image: confluentinc/cp-kafka:latest
+    container_name: demo-kafka
+    depends_on:
+      - demo-zookeeper
+    ports:
+      - "${ZOOKEEPER_PORT:-9092}:9092"
+    environment:
+      KAFKA_BROKER_ID: 1
+      KAFKA_ZOOKEEPER_CONNECT: demo-zookeeper:2181
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://demo-kafka:9092
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+
+  demo-kafdrop:
+    image: obsidiandynamics/kafdrop:latest
+    container_name: demo-kafdrop
+    ports:
+      - "${KAFDROP_PORT:-9000}:9000"
+    depends_on:
+      - demo-kafka
+    environment:
+      KAFKA_BROKERCONNECT: demo-kafka:9092
+        
+  quickcode-demo-portal:
+    container_name: "quickcode-demo-portal"
+    image: ${DOCKER_REGISTRY-}quickcode-demo-portal
+    build:
+      context: .
+      dockerfile: Presentation/QuickCode.Demo.Portal/Dockerfile
+      
+  quickcode-demo-event-listener-service:
+    container_name: "quickcode-demo-event-listener-service"
+    image: ${DOCKER_REGISTRY-}quickcode-demo-event-listener-service
+    build:
+      context: .
+      dockerfile: Services/QuickCode.Demo.EventListenerService/Dockerfile

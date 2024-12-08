@@ -1,0 +1,130 @@
+services:
+  demo-pg-data:
+    ports:
+      - "${PGSQL_PORT:-5432}:5432"
+    environment:
+      - POSTGRES_USER=docker
+      - POSTGRES_PASSWORD=dockerf
+    volumes:
+      - quickcode-demo-pg-data:/var/lib/postgresql/data
+  
+  demo-mysql-data:
+    ports:
+      - "${MYSQL_PORT:-3306}:3306"
+    volumes:
+      - quickcode-demo-mysql-data:/var/lib/mysql
+      - "~/sql-scripts/setup.sql:/docker-entrypoint-initdb.d/1.sql"
+    restart: always
+    environment:
+      - MYSQL_ROOT_PASSWORD=RootDocker!
+      - MYSQL_USER=docker
+      - MYSQL_PASSWORD=dockerf
+
+  demo-sql-data:
+    environment:
+      - SA_PASSWORD=Pass@word
+      - ACCEPT_EULA=Y
+    ports:
+      - "${SQL_PORT:-5433}:1433"
+    volumes:
+      - quickcode-demo-sql-data:/var/opt/mssql
+
+  demo-elasticsearch:
+    environment:
+      - xpack.security.enabled=false
+      - discovery.type=single-node
+    deploy:
+      resources:
+        limits:
+          memory: 1GB
+    ports:
+      - "${ELASTIC_PORT:-9200}:9200"
+    volumes:
+      - quickcode-demo-elasticsearch-data:/usr/share/elasticsearch/data
+    restart: always
+    ulimits:
+      memlock:
+        soft: -1
+        hard: -1
+    healthcheck:
+      test: curl -s http://demo-elasticsearch:9200 >/dev/null || exit 1
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+  demo-kibana:
+    environment:
+      - ELASTICSEARCH_HOSTS=http://demo-elasticsearch:9200
+    ports:
+      - "${KIBANA_PORT:-5601}:5601"
+    volumes:
+      - quickcode-demo-kibana-data:/usr/share/kibana/data
+    restart: always
+    depends_on:
+      - demo-elasticsearch
+
+  quickcode-demo-gateway-api:
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Local
+      - ASPNETCORE_URLS=http://+
+    ports:
+      - "${GATEWAY_PORT:-6060}:80"
+
+  quickcode-demo-user-manager-module-api:
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Local
+      - ASPNETCORE_URLS=http://+
+      - QUICKCODE_JWT_SECRET_KEY=xa8QZcWxpcc5k6GSqZwt3nsz3D4bEptuPWHWJyQtWTkkoMzOiFYJsclUHwiD2vC4
+    ports:
+      - "6001:80"
+
+
+  quickcode-demo-email-manager-module-api:
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Local
+      - ASPNETCORE_URLS=http://+
+      
+    ports:
+      - "6002:80"
+
+
+  quickcode-demo-sms-manager-module-api:
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Local
+      - ASPNETCORE_URLS=http://+
+      
+    ports:
+      - "6003:80"
+
+
+#[-WEB-]
+  quickcode-demo-portal:
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Local
+      - ASPNETCORE_URLS=http://+
+    ports:
+      - "${PORTAL_PORT:-6020}:80"
+      
+  quickcode-demo-event-listener-service:
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Local
+      - ASPNETCORE_URLS=http://+
+    ports:
+      - "6100:80"
+      - "${EVENT_LISTENER_PORT:-6100}:80"
+      
+volumes:
+  quickcode-demo-pg-data:
+    external: false
+    
+  quickcode-demo-mysql-data:
+    external: false
+    
+  quickcode-demo-sql-data:
+    external: false
+    
+  quickcode-demo-elasticsearch-data:
+    external: false
+    
+  quickcode-demo-kibana-data:
+    external: false

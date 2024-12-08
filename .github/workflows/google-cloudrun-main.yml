@@ -1,0 +1,56 @@
+name: Demo Build and Deploy
+
+on:
+  push:
+    branches: [ 'master' ]
+
+jobs:         
+  event-listener-service:
+    name: Kafka Event Listener Api
+    uses: ./.github/workflows/google-cloudrun-event-listener-service.yml
+    secrets: inherit
+
+  gateway:
+    name: Gateway Api
+    uses: ./.github/workflows/google-cloudrun-gateway.yml
+    secrets: inherit
+  
+  portal:
+    name: Admin Portal
+    uses: ./.github/workflows/google-cloudrun-portal.yml
+    secrets: inherit
+
+  user-manager-module:
+    name: User Manager Module Api
+    uses: ./.github/workflows/google-cloudrun-user-manager-module.yml
+    secrets: inherit
+
+  email-manager-module:
+    name: Email Manager Module Api
+    uses: ./.github/workflows/google-cloudrun-email-manager-module.yml
+    secrets: inherit
+
+  sms-manager-module:
+    name: Sms Manager Module Api
+    uses: ./.github/workflows/google-cloudrun-sms-manager-module.yml
+    secrets: inherit
+
+
+  complete:
+    name: Complete Deployments
+    runs-on: ubuntu-latest
+    needs:
+      - event-listener-service
+      - gateway
+      - portal
+      - user-manager-module
+      - email-manager-module
+      - sms-manager-module
+    if: always()
+    steps:
+      - name: Complete Notification
+        uses: nick-fields/retry@v2
+        with:
+          command: curl 'https://api.quickcode.net/api/GenerateSite/CompleteGeneration?actionId=${{ secrets.DEPLOYTOCLOUDRUNGATEWAY }}&sessionId=${{secrets.QUICKCODESESSIONID}}&message=Completed'
+          max_attempts: 3
+          timeout_minutes: 2
