@@ -96,7 +96,7 @@ public static class IdentityApiEndpointRouteBuilderExtensions
             }
 
             var user = new TUser();
-            user.GetType().GetProperty("PermisionGroupId")!.SetValue(user, 1);
+            user.GetType().GetProperty("PermissionGroupId")!.SetValue(user, 1);
             await userStore.SetUserNameAsync(user, email, CancellationToken.None);
             await emailStore.SetEmailAsync(user, email, CancellationToken.None);
             var result = await userManager.CreateAsync(user, registration.Password);
